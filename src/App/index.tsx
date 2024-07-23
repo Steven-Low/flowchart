@@ -161,9 +161,8 @@ const NestedFlow = () => {
 
   const onRestore = useCallback(() => {
     const restoreFlow = async () => {
-      const pattern  = (value: string|null, defaultValue: string=""):string => value || defaultValue;
-      const flow = JSON.parse(pattern(localStorage.getItem(flowKey)));
-
+      const storedData = localStorage.getItem(flowKey);
+      const flow = JSON.parse(storedData||"");
       if (flow) {
         const { x = 0, y = 0, zoom = 1 } = flow.viewport;
         setNodes(flow.nodes || []);
@@ -178,18 +177,44 @@ const NestedFlow = () => {
     const content = JSON.stringify(rfInstance?.toObject())
     const blob = new Blob([content], {type:'text/plain'});
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'backup.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'backup.json';
+    link.click();
     URL.revokeObjectURL(url);
   };
 
-  const onImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.
+  const onImport = () => {
+    const inputElement = document.createElement('input')
+    inputElement.setAttribute("type","file");
+    inputElement.setAttribute("id","importNodes");
+    inputElement.setAttribute("accept",".json,.txt");
+    inputElement.style.display = "none";
+    inputElement.click();
+    inputElement.addEventListener('change', (e) => {
+        const input = e.target as HTMLInputElement;
+        if (input.files?.length){
+          const reader = new FileReader();
+          reader.readAsText(input.files[0])
+          reader.onload = () => {
+            const fileContent = reader.result?.toString() || "";
+            console.log(fileContent); // Do something with the file content
+            const restoreFlow = async () => {
+              const flow = JSON.parse(fileContent);
+              if (flow) {
+                const { x = 0, y = 0, zoom = 1 } = flow.viewport;
+                setNodes(flow.nodes || []);
+                setEdges(flow.edges || []);
+                setViewport({ x, y, zoom });
+              }
+            };
+            restoreFlow();
+          };
+        }
+      }
+    )
   }
+  
 
   return (
     <ReactFlow
@@ -212,7 +237,7 @@ const NestedFlow = () => {
         <button onClick={onSave}>save</button>
         <button onClick={onRestore}>restore</button>
         <button onClick={onExport}>export</button>
-        
+        <button onClick={onImport}>import</button>
       </Panel>
     </ReactFlow>
   );
