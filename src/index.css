@@ -7,3 +7,60 @@ body,
 #root {
   height: 100%;
 }
+
+
+
+
+.react-flow__edge.selected{
+  z-index: +1000;
+}
+
+
+/* CSS */
+.button-1 {
+  background-color: #EA4C89;
+  border-color: #FFFFFF;
+  border-radius: 0px;
+  border-width: 2px;
+  border-style: none;
+  box-sizing: border-box;
+  color: #FFFFFF;
+  cursor: pointer;
+  display: inline-block;
+  font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  height: 40px;
+  line-height: 20px;
+  list-style: none;
+  margin: 0;
+  outline: none;
+  padding: 10px 16px;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  transition: color 100ms;
+  vertical-align: baseline;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.button-1:hover,
+.button-1:focus {
+  background-color: #F082AC;
+}
+
+.ResizableNode {
+  height: 50px;
+  border: 1px solid #eee;
+  padding: 5px;
+  border-radius: 5px;
+  background: white;
+}
+
+.react-flow__node {
+  z-index: -1 !important;
+  border-radius: 15px !important;
+  width: 100px;
+}

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { useState, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import {
   ReactFlow,
   addEdge,
@@ -11,6 +11,7 @@ import {
   applyEdgeChanges,
   useReactFlow,
   Panel,
+  reconnectEdge,
   
   type Node,
   type Edge,
@@ -23,14 +24,20 @@ import {
   type ReactFlowInstance,
   type NodeTypes,
   type DefaultEdgeOptions,
+
   
   useNodesState,
   useEdgesState,
 
 } from '@xyflow/react';
+
 import '@xyflow/react/dist/style.css';
+import ResizableNodeSelected from './NodeTypes/ResizableNodeSelected';
+
 
 const flowKey = 'backup-flow';
+
+
 
 const initialNodes: Node[] = [
   {
@@ -57,7 +64,7 @@ const initialNodes: Node[] = [
   },
   {
     id: '3',
-    type: 'default',
+    type: 'resizableNode',
     data: { label: 'Node 1' },
     position: { x: 320, y: 100 },
     className: 'light',
@@ -137,6 +144,7 @@ const NestedFlow = () => {
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   const { setViewport } = useReactFlow();
+  const edgeReconnectSuccessful = useRef(true);
 
 
   const onNodesChange: OnNodesChange = useCallback(
@@ -171,7 +179,7 @@ const NestedFlow = () => {
       }
     };
     restoreFlow();
-  }, [setNodes, setViewport]);
+  }, [setNodes, setViewport]); 
 
   const onExport = () => {
     const content = JSON.stringify(rfInstance?.toObject())
@@ -215,6 +223,25 @@ const NestedFlow = () => {
     )
   }
   
+  const onReconnectStart = useCallback(() => {
+    edgeReconnectSuccessful.current = false;
+  }, []);
+
+  const onReconnect = useCallback((oldEdge: any, newConnection: any) => {
+    edgeReconnectSuccessful.current = true;
+    setEdges((els) => reconnectEdge(oldEdge, newConnection, els));
+  }, []);
+
+  const onReconnectEnd = useCallback((_: any, edge: any) => {
+    if (!edgeReconnectSuccessful.current) {
+      setEdges((eds) => eds.filter((e) => e.id !== edge.id));
+    }
+
+    edgeReconnectSuccessful.current = true;
+  }, []);
+
+  const nodeTypes:any = useMemo(() => ({ resizableNode: ResizableNodeSelected }), []);
+
 
   return (
     <ReactFlow
@@ -227,6 +254,11 @@ const NestedFlow = () => {
       className="react-flow-subflows-example"
       onInit={setRfInstance}
       fitView
+      snapToGrid
+      onReconnect={onReconnect}
+      onReconnectStart={onReconnectStart}
+      onReconnectEnd={onReconnectEnd}
+      nodeTypes={nodeTypes}
       fitViewOptions={fitViewOptions}
       defaultEdgeOptions={defaultEdgeOptions}
     >
@@ -234,10 +266,12 @@ const NestedFlow = () => {
       <Controls />
       <Background />
       <Panel position="top-right">
-        <button onClick={onSave}>save</button>
-        <button onClick={onRestore}>restore</button>
-        <button onClick={onExport}>export</button>
-        <button onClick={onImport}>import</button>
+      <div className='button-1-container'>
+        <button className="button-1" onClick={onSave}>save</button>
+        <button className="button-1" onClick={onRestore}>restore</button>
+        <button className="button-1" onClick={onExport}>export</button>
+        <button className="button-1" onClick={onImport}>import</button>
+      </div>
       </Panel>
     </ReactFlow>
   );
