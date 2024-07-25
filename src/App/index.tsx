@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, } from 'react';
 import {
   ReactFlow,
   addEdge,
@@ -12,6 +12,7 @@ import {
   useReactFlow,
   Panel,
   reconnectEdge,
+  ReactFlowProvider,
   
   type Node,
   type Edge,
@@ -22,21 +23,24 @@ import {
   type OnNodeDrag,
  
   type ReactFlowInstance,
-  type NodeTypes,
   type DefaultEdgeOptions,
+  type Viewport,
 
   
-  useNodesState,
-  useEdgesState,
-
 } from '@xyflow/react';
 
 import '@xyflow/react/dist/style.css';
 import ResizableNodeSelected from './NodeTypes/ResizableNodeSelected';
+import { nanoid } from 'nanoid/non-secure';
+import { Sidebar } from './sidebar';
 
+const buttonStyle = {
+  fontSize: 12,
+  marginRight: 5,
+  marginTop: 5,
+};
 
 const flowKey = 'backup-flow';
-
 
 
 const initialNodes: Node[] = [
@@ -68,6 +72,12 @@ const initialNodes: Node[] = [
     data: { label: 'Node 1' },
     position: { x: 320, y: 100 },
     className: 'light',
+    style: {
+      background: '#fff',
+      border: '1px solid blue',
+      borderRadius: 15,
+      fontSize: 12,
+    }
   },
   {
     id: '4',
@@ -143,9 +153,10 @@ const NestedFlow = () => {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
-  const { setViewport } = useReactFlow();
+  const { setViewport, getViewport } = useReactFlow();
   const edgeReconnectSuccessful = useRef(true);
-
+  const [currentNode, setCurrentNode] = useState<Node | null>(null);
+  const reactFlowWrapper = useRef(null);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -180,6 +191,28 @@ const NestedFlow = () => {
     };
     restoreFlow();
   }, [setNodes, setViewport]); 
+
+  
+
+  const onAdd = useCallback(() => {
+    const {x, y, } = getViewport();
+    const newNode = {
+      id: nanoid(),
+      data: { label: 'Added node' },
+      type: 'resizableNode',
+      style: {
+        background: '#fff',
+        border: '1px solid black',
+        borderRadius: 15,
+        fontSize: 12,
+      },
+      position: {
+        x: x,
+        y: y
+      },
+    };
+    setNodes((nds) => nds.concat(newNode));
+  }, [setNodes]);
 
   const onExport = () => {
     const content = JSON.stringify(rfInstance?.toObject())
@@ -244,6 +277,7 @@ const NestedFlow = () => {
 
 
   return (
+
     <ReactFlow
       nodes={nodes}
       edges={edges}
@@ -261,20 +295,39 @@ const NestedFlow = () => {
       nodeTypes={nodeTypes}
       fitViewOptions={fitViewOptions}
       defaultEdgeOptions={defaultEdgeOptions}
+      onNodeClick={(_, node) => {
+        setCurrentNode(node);
+      }}
+      onPaneClick={() => setCurrentNode(null)}
+
     >
       <MiniMap />
       <Controls />
       <Background />
+      <Panel position="top-left">
+        <button className="button-1" onClick={onAdd}>add</button>
+      </Panel>
       <Panel position="top-right">
       <div className='button-1-container'>
-        <button className="button-1" onClick={onSave}>save</button>
-        <button className="button-1" onClick={onRestore}>restore</button>
-        <button className="button-1" onClick={onExport}>export</button>
-        <button className="button-1" onClick={onImport}>import</button>
+        <button className="button-1" style={buttonStyle} onClick={onSave}>save</button>
+        <button className="button-1" style={buttonStyle} onClick={onRestore}>restore</button>
+        <button className="button-1" style={buttonStyle} onClick={onExport}>export</button>
+        <button className="button-1" style={buttonStyle} onClick={onImport}>import</button>
       </div>
       </Panel>
+    
     </ReactFlow>
+
+
   );
 };
 
-export default NestedFlow;
+
+
+const FlowWrapper = () => (
+  <ReactFlowProvider>
+    <NestedFlow />
+  </ReactFlowProvider>
+);
+
+export default FlowWrapper;
