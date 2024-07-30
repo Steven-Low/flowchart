@@ -6,7 +6,8 @@ npm install --save typescript @types/node @types/react @types/react-dom @types/j
 
 # Install package dependencies
 npm install reactflow 
-
+npm install typescript@4.9.5
+npm install --legacy-peer-deps
 
 # How to use?
 
