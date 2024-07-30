@@ -6,50 +6,15 @@ html,
 body,
 #root {
   height: 100%;
+  background-color: whitesmoke;
+  --tooltip-vertical-spacing: -110px;
+  --tooltip-triangle-size: 0.5rem;
 }
-
-
 
 
 .react-flow__edge.selected{
   z-index: +1000;
 }
-
-
-/* CSS */
-.button-1 {
-  background-color: #EA4C89;
-  border-color: #FFFFFF;
-  border-radius: 0px;
-  border-width: 2px;
-  border-style: none;
-  box-sizing: border-box;
-  color: #FFFFFF;
-  cursor: pointer;
-  display: inline-block;
-  font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  height: 40px;
-  line-height: 20px;
-  list-style: none;
-  outline: none;
-  padding: 10px 16px;
-  position: relative;
-  text-align: center;
-  text-decoration: none;
-  transition: color 100ms;
-  vertical-align: baseline;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: manipulation;
-}
-
-.button-1:hover,
-.button-1:focus {
-  background-color: #F082AC;
-}
-
 
 .react-flow__node {
   z-index: -1 !important;
@@ -65,3 +30,84 @@ body,
   width: 100px;
 }
 
+.updatenode__controls {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 4;
+  font-size: 12px;
+  background-color: #f5f5f5;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.updatenode__controls label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.updatenode__label {
+  margin-top: 10px;
+}
+
+/* CSS */
+.button-1 {
+  background-color: rgba(255, 255, 255, 0.8);
+  border: none;
+  color: #53475e;
+  padding: 8px 12px;
+  font-size: 20px;
+  cursor: pointer;
+  margin: 2px 2px;
+  border-radius: 4px;
+}
+
+.button-1:hover, .button-1:focus {
+  background-color: #ba8de0;
+}
+
+.button-1-container {
+  height:auto;
+  display: flex;
+  box-sizing: border-box;
+  align-items: center;
+  background-color: whitesmoke;
+  padding: 2px;
+  box-shadow: 0px 2px 10px rgba(5, 0, 56, 0.08);
+  border-radius: 4px;
+  position: relative;
+}
+
+
+.tooltip {
+  position: absolute;
+  bottom: calc(var(--tooltip-vertical-spacing) );
+  transform-origin: bottom center;
+  /*   Set a minimum height for your tooltip, which affects text wrapping */
+  min-width: 120px;
+  /*   Adding some nice padding */
+  padding: 1rem;
+  border-radius: 0.4rem;
+  background: #53475e;
+  color: white;
+}
+
+.tooltip::after {
+  content: "";
+  position: absolute;
+  height: 0;
+  width: 0;
+  bottom: 99%; /* Move tooltip triangle vertical up*/
+  left: 50%;
+  border-style: solid;
+  border-width: 0 var(--tooltip-triangle-size) var(--tooltip-triangle-size) var(--tooltip-triangle-size);
+  border-color: #53475e transparent ;
+  --translateX: -50%;
+  /* 'transform: translateX' Works with left: 50% to move the tooltip triangle to the horizontal center of the tooltip box */
+  transform: translateX(var(--translateX));
+  /*   Additional browser compatibility for 'transform': */
+  -moz-transform: translateX(var(--translateX));
+  -webkit-transform: translateX(var(--translateX));
+}

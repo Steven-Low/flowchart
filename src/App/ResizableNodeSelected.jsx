@@ -1,6 +1,7 @@
 import { memo } from 'react';
 
 import { Handle, Position, NodeResizer, NodeToolbar} from '@xyflow/react';
+import { SourceHandle, TargetHandle } from './customHandle';
 
 const buttonStyle = {
   fontSize: 12,
@@ -9,11 +10,14 @@ const buttonStyle = {
   borderradius: 50
 };
 
+
+
 const ResizableNodeSelected = ({ data, selected }) => {
+  //      <Handle type="target" position={Position.Top} />
   return (
     <>
       <NodeToolbar isVisible={data.toolbarVisible} position={data.toolbarPosition}>
-        <button style={buttonStyle}>delete</button>
+        <button style={buttonStyle}>reserve</button>
         <button style={buttonStyle}>copy</button>
       </NodeToolbar>
       <NodeResizer
@@ -22,9 +26,10 @@ const ResizableNodeSelected = ({ data, selected }) => {
         minWidth={100}
         minHeight={30}
       />
-      <Handle type="target" position={Position.Left} />
+
+      <TargetHandle position={data.targetHandle || Position.Top} />      
       <div style={{ padding: 10 }}>{data.label}</div>
-      <Handle type="source" position={Position.Right} />
+      <SourceHandle position={data.sourceHandle || Position.Bottom}/>
     </>
   );
 };

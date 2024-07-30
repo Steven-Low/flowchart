@@ -1,18 +1,22 @@
 import React from 'react';
 
-import { useState, useMemo, useCallback, useRef, } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect, } from 'react';
 import {
   ReactFlow,
   addEdge,
   MiniMap,
   Controls,
   Background,
+  BackgroundVariant,
   applyNodeChanges,
   applyEdgeChanges,
   useReactFlow,
   Panel,
   reconnectEdge,
   ReactFlowProvider,
+  Position,
+  useUpdateNodeInternals,
+  NodeTypes,
   
   type Node,
   type Edge,
@@ -25,20 +29,13 @@ import {
   type ReactFlowInstance,
   type DefaultEdgeOptions,
   type Viewport,
-
   
 } from '@xyflow/react';
 
 import '@xyflow/react/dist/style.css';
-import ResizableNodeSelected from './NodeTypes/ResizableNodeSelected';
+import ResizableNodeSelected from './ResizableNodeSelected';
 import { nanoid } from 'nanoid/non-secure';
-import { Sidebar } from './sidebar';
 
-const buttonStyle = {
-  fontSize: 12,
-  marginRight: 5,
-  marginTop: 5,
-};
 
 const flowKey = 'backup-flow';
 
@@ -81,7 +78,7 @@ const initialNodes: Node[] = [
   },
   {
     id: '4',
-    type: 'group',
+    type: 'default',
     data: { label: 'Group B' },
     position: { x: 320, y: 200 },
     className: 'light',
@@ -116,6 +113,7 @@ const initialNodes: Node[] = [
     position: { x: 20, y: 40 },
     className: 'light',
     parentId: '4b',
+    extent: 'parent',
   },
   {
     id: '4b2',
@@ -155,8 +153,11 @@ const NestedFlow = () => {
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   const { setViewport, getViewport } = useReactFlow();
   const edgeReconnectSuccessful = useRef(true);
-  const [currentNode, setCurrentNode] = useState<Node | null>(null);
-  const reactFlowWrapper = useRef(null);
+  const [currentNodeLabel, setCurrentNodeLabel] = useState<String | any>('');
+  const [currentNodeBg, setCurrentNodeBg] = useState<String | any>('');
+  const [CurrentNodeDirec, setCurrentNodeDirec] = useState(false);
+  const [currentNodeType, setCurrentNodeType] = useState('default');
+  const updateNodeInternals = useUpdateNodeInternals();
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -198,7 +199,11 @@ const NestedFlow = () => {
     const {x, y, } = getViewport();
     const newNode = {
       id: nanoid(),
-      data: { label: 'Added node' },
+      data: { 
+        label: 'Added node',
+        targetHandle: Position.Left,
+        sourceHandle: Position.Right,
+       },
       type: 'resizableNode',
       style: {
         background: '#fff',
@@ -215,7 +220,7 @@ const NestedFlow = () => {
   }, [setNodes]);
 
   const onExport = () => {
-    const content = JSON.stringify(rfInstance?.toObject())
+    const content = JSON.stringify(rfInstance?.toObject(),null,2)
     const blob = new Blob([content], {type:'text/plain'});
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -274,11 +279,102 @@ const NestedFlow = () => {
   }, []);
 
   const nodeTypes:any = useMemo(() => ({ resizableNode: ResizableNodeSelected }), []);
+  
+  const connectingNodeId = useRef<string | null> (null);
+  
+  const onNodeClick = (event:any, node: Node) => {
+    connectingNodeId.current = node.id;
+    console.log('click node', node);
+    console.log('event', event);
+    setCurrentNodeLabel(node.data.label||"");
+    setCurrentNodeBg(node.style?.backgroundColor||"rgba(255, 255, 255, 1)");
+    setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
+    setCurrentNodeType(node.type||"default");
+  } 
 
+  const onPaneClick = (event:any) => {
+    connectingNodeId.current = null;
+    setCurrentNodeLabel("")
+    setCurrentNodeBg("");
+    setCurrentNodeDirec(false);
+    setCurrentNodeType("");
+  }
+  
+  // *** EDITING TOOLBARS *** //
+  // 1) Change Node Label Name
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === connectingNodeId.current) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              label: currentNodeLabel,
+            },
+          };
+        }
+        return node;
+      }),
+    );
+  }, [currentNodeLabel, setNodes]);
 
+  // 2) Change Node Handle Direction (LR/TB)
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === connectingNodeId.current) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              targetHandle: (CurrentNodeDirec) ? Position.Left : Position.Top,
+              sourceHandle: (CurrentNodeDirec) ? Position.Right : Position.Bottom,
+            },
+          };
+        }
+        return node;
+      }),
+    );
+    updateNodeInternals(connectingNodeId.current||"");
+  }, [CurrentNodeDirec, setNodes]);
+
+  // 3) Change Node Background Color 
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === connectingNodeId.current) {
+          return {
+            ...node,
+            style: {
+              ...node.style,
+              backgroundColor: currentNodeBg,
+            },
+          };
+        }
+        return node;
+      }),
+    );
+  }, [currentNodeBg, setNodes]);
+
+  // 4) Change Node Type
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === connectingNodeId.current) {
+          return {
+            ...node,
+            type: currentNodeType,
+          };
+        }
+        return node;
+      }),
+    );
+  }, [currentNodeType, setCurrentNodeType]);
   return (
 
     <ReactFlow
+      color="#ccc"
       nodes={nodes}
       edges={edges}
       onNodesChange={onNodesChange}
@@ -295,29 +391,43 @@ const NestedFlow = () => {
       nodeTypes={nodeTypes}
       fitViewOptions={fitViewOptions}
       defaultEdgeOptions={defaultEdgeOptions}
-      onNodeClick={(_, node) => {
-        setCurrentNode(node);
-      }}
-      onPaneClick={() => setCurrentNode(null)}
+      onNodeClick={onNodeClick}
+      onPaneClick={onPaneClick}
+      
 
     >
       <MiniMap />
       <Controls />
-      <Background />
-      <Panel position="top-left">
+      <Background  variant={BackgroundVariant.Dots}/>
+      <Panel position="bottom-left">
         <button className="button-1" onClick={onAdd}>add</button>
       </Panel>
-      <Panel position="top-right">
+      <Panel position="top-left">
       <div className='button-1-container'>
-        <button className="button-1" style={buttonStyle} onClick={onSave}>save</button>
-        <button className="button-1" style={buttonStyle} onClick={onRestore}>restore</button>
-        <button className="button-1" style={buttonStyle} onClick={onExport}>export</button>
-        <button className="button-1" style={buttonStyle} onClick={onImport}>import</button>
+        <button className="button-1"  onClick={onSave}><i className='bx bx-save'></i></button>
+        <button className="button-1"  onClick={onRestore}><i className='bx bx-undo' ></i></button>
+        <button className="button-1"  onClick={onExport}><i className='bx bx-export' ></i></button>
+        <button className="button-1"  onClick={onImport}><i className='bx bx-import' ></i></button>
+        <div className="tooltip">Import Node Components from JSON Backup (Not Save Automatically)</div>
       </div>
+      
       </Panel>
-    
+      <div className="updatenode__controls">
+        <label className="updatenode__label">label:</label>
+        <input value={currentNodeLabel} onChange={(evt) => setCurrentNodeLabel(evt.target.value)} />
+        <label className="updatenode__label">background:</label>
+        <input value={currentNodeBg} onChange={(evt) => setCurrentNodeBg(evt.target.value)} />
+        <label className="updatenode__label">handle direction:</label>
+        <input
+          type="checkbox"
+          checked={CurrentNodeDirec}
+          onChange={(evt) => setCurrentNodeDirec(evt.target.checked)} 
+        />
+        <label className="updatenode__label">node type:</label>
+        <input value={currentNodeType} onChange={(evt) => setCurrentNodeType(evt.target.value)} />
+      </div>
+   
     </ReactFlow>
-
 
   );
 };
