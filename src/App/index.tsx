@@ -35,6 +35,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import ResizableNodeSelected from './ResizableNodeSelected';
 import { nanoid } from 'nanoid/non-secure';
+import ColorSwatch from './colorSwatch';
 
 
 const flowKey = 'backup-flow';
@@ -399,32 +400,51 @@ const NestedFlow = () => {
       <MiniMap />
       <Controls />
       <Background  variant={BackgroundVariant.Dots}/>
+      
       <Panel position="bottom-left">
-        <button className="button-1" onClick={onAdd}>add</button>
+        <div className="button-2-container">
+          <button className="button-2" onClick={onAdd}><i className='bx bx-shape-square' ></i></button>
+        </div>
       </Panel>
+    
       <Panel position="top-left">
       <div className='button-1-container'>
-        <button className="button-1"  onClick={onSave}><i className='bx bx-save'></i></button>
-        <button className="button-1"  onClick={onRestore}><i className='bx bx-undo' ></i></button>
-        <button className="button-1"  onClick={onExport}><i className='bx bx-export' ></i></button>
-        <button className="button-1"  onClick={onImport}><i className='bx bx-import' ></i></button>
-        <div className="tooltip">Import Node Components from JSON Backup (Not Save Automatically)</div>
+        <button className="button-1"  onClick={onImport}><i className='bx bx-folder-open' > Open</i></button>
+        <div className="tooltip open">Open FlowChart Nodes from JSON Backup (Not Save Automatically)</div>
+        <button className="button-1"  onClick={onSave}><i className='bx bx-save'></i> Save</button>
+        <div className="tooltip save">Save FlowChart Nodes in Browser Storage</div>
+        <button className="button-1"  onClick={onRestore}><i className='bx bx-undo' ></i> Restore</button>
+        <div className="tooltip restore">Restore FlowChart Nodes from Browser Storage</div>
+        <button className="button-1"  onClick={onExport}><i className='bx bx-export' ></i> Export</button>
+        <div className="tooltip export">Export FLowChart Nodes to JSON or PNG format</div>
       </div>
-      
       </Panel>
       <div className="updatenode__controls">
         <label className="updatenode__label">label:</label>
         <input value={currentNodeLabel} onChange={(evt) => setCurrentNodeLabel(evt.target.value)} />
+        <ColorSwatch />
         <label className="updatenode__label">background:</label>
         <input value={currentNodeBg} onChange={(evt) => setCurrentNodeBg(evt.target.value)} />
-        <label className="updatenode__label">handle direction:</label>
-        <input
-          type="checkbox"
-          checked={CurrentNodeDirec}
-          onChange={(evt) => setCurrentNodeDirec(evt.target.checked)} 
-        />
-        <label className="updatenode__label">node type:</label>
-        <input value={currentNodeType} onChange={(evt) => setCurrentNodeType(evt.target.value)} />
+         
+        <div className="dropdown">
+          <label className="updatenode__label">handle direction:</label>
+          <button className="dropbtn">{(CurrentNodeDirec)?"left right":"top down"||"top down"}</button>
+          <div className="dropdown-content">
+            <button onClick={() => setCurrentNodeDirec(true)}>left right</button>
+            <button onClick={() => setCurrentNodeDirec(false)}>top down</button>
+          </div>
+        </div>
+
+        <div className="dropdown">
+          <label className="updatenode__label">node type:</label>
+          <button className="dropbtn">{currentNodeType||"default"}</button>
+          <div className="dropdown-content">
+            <button onClick={() => setCurrentNodeType("resizableNode")}>Resizable Node</button>
+            <button onClick={() => setCurrentNodeType("default")}>Default Node</button>
+          </div>
+        </div>
+
+        
       </div>
    
     </ReactFlow>

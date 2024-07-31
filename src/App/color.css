@@ -1,0 +1,55 @@
+
+.colorcontainer {
+    height: 100%;
+    max-width: 250px;
+    margin: 30px auto;
+    text-align: center;
+}
+
+
+.column {
+	align-self: center;
+	width: 50%;
+	text-align: center;
+}
+
+#colorscontent {
+	text-align: left;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.colorcontainer .IroColorPicker {
+	display: inline-block !important;
+}
+
+.colorswatches {
+	display: flex;
+	flex-wrap: wrap;
+    flex-direction: row;
+    align-items: center;
+	align-content: center;
+    justify-content: center;
+	gap: .5rem .5rem;
+	margin-top: 1rem
+}
+
+.swatch {
+    border-radius: 4px;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(0,0,0,0);
+    text-align: center;
+    color:red;
+    font-size: 20px;
+}
+
+.radio-button-label > input { 
+	display: none;
+}
+
+input:checked + .swatch { 
+	border: 2px solid #ebebeb;
+}
+
