@@ -16,6 +16,11 @@ body,
   z-index: +1000;
 }
 
+.react-flow__node.highlight {
+  background-color: #ff0072;
+  color: white;
+}
+
 .react-flow__node {
   z-index: -1 !important;
   border: '1px solid green'!important;

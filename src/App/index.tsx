@@ -136,9 +136,7 @@ const initialEdges = [
   { id: 'e4b1-4b2', source: '4b1', target: '4b2' },
 ];
 
-const onNodeDrag: OnNodeDrag = (_, node) => {
-  console.log('drag event', node.data);
-};
+
 
 const fitViewOptions: FitViewOptions = {
   padding: 0.2,
@@ -152,7 +150,7 @@ const NestedFlow = () => {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
-  const { setViewport, getViewport } = useReactFlow();
+  const { setViewport, getViewport, getIntersectingNodes } = useReactFlow();
   const edgeReconnectSuccessful = useRef(true);
   const [currentNodeLabel, setCurrentNodeLabel] = useState<String | any>('');
   const [currentNodeBg, setCurrentNodeBg] = useState<String | any>('');
@@ -300,6 +298,16 @@ const NestedFlow = () => {
     setCurrentNodeDirec(false);
     setCurrentNodeType("");
   }
+
+  const onNodeDrag:any = useCallback((_: MouseEvent, node:Node)=> {
+    const intersections = getIntersectingNodes(node).map((n)=>n.id);
+    setNodes((ns) => 
+      ns.map((n)=> ({
+      ...n,
+      className: intersections.includes(n.id)? 'highlight' : '',
+    })),
+  );
+  }, []);
   
   // *** EDITING TOOLBARS *** //
   // 1) Change Node Label Name
@@ -422,10 +430,10 @@ const NestedFlow = () => {
       <div className="updatenode__controls">
         <label className="updatenode__label">label:</label>
         <input value={currentNodeLabel} onChange={(evt) => setCurrentNodeLabel(evt.target.value)} />
-        <ColorSwatch />
+
         <label className="updatenode__label">background:</label>
         <input value={currentNodeBg} onChange={(evt) => setCurrentNodeBg(evt.target.value)} />
-         
+        <ColorSwatch />
         <div className="dropdown">
           <label className="updatenode__label">handle direction:</label>
           <button className="dropbtn">{(CurrentNodeDirec)?"left right":"top down"||"top down"}</button>
