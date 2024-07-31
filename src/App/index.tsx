@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { useState, useMemo, useCallback, useRef, useEffect, } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
   ReactFlow,
   addEdge,
@@ -36,6 +36,7 @@ import '@xyflow/react/dist/style.css';
 import ResizableNodeSelected from './ResizableNodeSelected';
 import { nanoid } from 'nanoid/non-secure';
 import ColorSwatch from './colorSwatch';
+import { getNodesBounds, } from 'reactflow';
 
 
 const flowKey = 'backup-flow';
@@ -300,12 +301,14 @@ const NestedFlow = () => {
   }
 
   const onNodeDrag:any = useCallback((_: MouseEvent, node:Node)=> {
-    const intersections = getIntersectingNodes(node).map((n)=>n.id);
+    const intersectionsId = getIntersectingNodes(node).map((n)=>n.id);
+    const intersectionsNodes:Node[] = getIntersectingNodes(node);
+    const rects = getNodesBounds(intersectionsNodes)
     
     setNodes((ns) => 
       ns.map((n)=> ({
       ...n,
-      className: intersections.includes(n.id)? 'highlight' : '',
+      className: (true)? 'highlight' : '',
     })),
   );
   }, []);
