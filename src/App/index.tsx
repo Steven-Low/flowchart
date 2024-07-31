@@ -150,7 +150,7 @@ const NestedFlow = () => {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
-  const { setViewport, getViewport, getIntersectingNodes } = useReactFlow();
+  const { setViewport, getViewport, getIntersectingNodes, isNodeIntersecting } = useReactFlow();
   const edgeReconnectSuccessful = useRef(true);
   const [currentNodeLabel, setCurrentNodeLabel] = useState<String | any>('');
   const [currentNodeBg, setCurrentNodeBg] = useState<String | any>('');
@@ -301,6 +301,7 @@ const NestedFlow = () => {
 
   const onNodeDrag:any = useCallback((_: MouseEvent, node:Node)=> {
     const intersections = getIntersectingNodes(node).map((n)=>n.id);
+    
     setNodes((ns) => 
       ns.map((n)=> ({
       ...n,
