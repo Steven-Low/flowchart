@@ -36,7 +36,7 @@ import '@xyflow/react/dist/style.css';
 import ResizableNodeSelected from './ResizableNodeSelected';
 import { nanoid } from 'nanoid/non-secure';
 import ColorSwatch from './colorSwatch';
-import { getNodesBounds, } from 'reactflow';
+import { getNodesBounds, isNode, } from 'reactflow';
 
 
 const flowKey = 'backup-flow';
@@ -151,13 +151,15 @@ const NestedFlow = () => {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
-  const { setViewport, getViewport, getIntersectingNodes, isNodeIntersecting } = useReactFlow();
+  const { setViewport, getViewport, getIntersectingNodes, isNodeIntersecting, screenToFlowPosition } = useReactFlow();
   const edgeReconnectSuccessful = useRef(true);
   const [currentNodeLabel, setCurrentNodeLabel] = useState<String | any>('');
   const [currentNodeBg, setCurrentNodeBg] = useState<String | any>('');
   const [CurrentNodeDirec, setCurrentNodeDirec] = useState(false);
   const [currentNodeType, setCurrentNodeType] = useState('default');
   const updateNodeInternals = useUpdateNodeInternals();
+  const [target, setTarget] = useState<any>(null);
+  const dragRef = useRef<any>(null);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -284,8 +286,8 @@ const NestedFlow = () => {
   
   const onNodeClick = (event:any, node: Node) => {
     connectingNodeId.current = node.id;
-    console.log('click node', node);
-    console.log('event', event);
+    // console.log('click node', node);
+    // console.log('event', event);
     setCurrentNodeLabel(node.data.label||"");
     setCurrentNodeBg(node.style?.backgroundColor||"rgba(255, 255, 255, 1)");
     setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
@@ -300,18 +302,38 @@ const NestedFlow = () => {
     setCurrentNodeType("");
   }
 
-  const onNodeDrag:any = useCallback((_: MouseEvent, node:Node)=> {
-    const intersectionsId = getIntersectingNodes(node).map((n)=>n.id);
-    const intersectionsNodes:Node[] = getIntersectingNodes(node);
-    const rects = getNodesBounds(intersectionsNodes)
-    
-    setNodes((ns) => 
-      ns.map((n)=> ({
-      ...n,
-      className: (true)? 'highlight' : '',
-    })),
-  );
+  const onNodeDrag:any = (_: MouseEvent, node:Node)=> {
+    connectingNodeId.current = node.id;
+    setCurrentNodeLabel(node.data.label||"");
+    setCurrentNodeBg(node.style?.backgroundColor||"rgba(255, 255, 255, 1)");
+    setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
+    setCurrentNodeType(node.type||"default");
+    // calculate the center point of the node from position and dimensions
+    const centerX = node.position.x + (node.measured?.width || 0) / 2;
+    const centerY = node.position.y + (node.measured?.height || 0) / 2;
+
+    // find overlapping nodes
+    const intersectingNodes = getIntersectingNodes(node, false);
+    setTarget(intersectingNodes ? intersectingNodes[0] : null);
+    console.log(target);
+  };
+
+  const onNodeDragStart = (evt:any, node:Node) => {
+    dragRef.current = node;
+  };
+
+  const onNodeDragStop = (evt:any, node:Node) => {
+    setTarget(null);
+    dragRef.current = null;
+  };
+
+  
+  const onDragOver = useCallback((event:any) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
   }, []);
+
+
   
   // *** EDITING TOOLBARS *** //
   // 1) Change Node Label Name
@@ -370,6 +392,26 @@ const NestedFlow = () => {
     );
   }, [currentNodeBg, setNodes]);
 
+  useEffect(() => {
+    // whenever the target changes, we swap the colors
+    setNodes((nodes) =>
+      nodes.map((node) => {
+        if (node.id === dragRef.current?.id && target) {
+          return {
+            ...node,
+            style: {
+              ...node.style,
+              backgroundColor: target.style?.backgroundColor || "#fff",
+            },
+          }
+        }
+        return node;
+      }),
+    );
+  
+  }, [target, setNodes]);
+  
+
   // 4) Change Node Type
   useEffect(() => {
     setNodes((nds) =>
@@ -393,6 +435,8 @@ const NestedFlow = () => {
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onNodeDrag={onNodeDrag}
+      onNodeDragStart={onNodeDragStart}
+      onNodeDragStop={onNodeDragStop}
       onConnect={onConnect}
       className="react-flow-subflows-example"
       onInit={setRfInstance}
@@ -406,6 +450,7 @@ const NestedFlow = () => {
       defaultEdgeOptions={defaultEdgeOptions}
       onNodeClick={onNodeClick}
       onPaneClick={onPaneClick}
+      onDragOver={onDragOver}
       
 
     >
@@ -437,7 +482,7 @@ const NestedFlow = () => {
 
         <label className="updatenode__label">background:</label>
         <input value={currentNodeBg} onChange={(evt) => setCurrentNodeBg(evt.target.value)} />
-        <ColorSwatch />
+        <ColorSwatch setCurrentNodeBg={setCurrentNodeBg}/>
         <div className="dropdown">
           <label className="updatenode__label">handle direction:</label>
           <button className="dropbtn">{(CurrentNodeDirec)?"left right":"top down"||"top down"}</button>
