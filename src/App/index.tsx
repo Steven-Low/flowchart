@@ -17,6 +17,7 @@ import {
   Position,
   useUpdateNodeInternals,
   NodeTypes,
+  useNodesState,
   
   type Node,
   type Edge,
@@ -93,7 +94,7 @@ const initialNodes: Node[] = [
     position: { x: 15, y: 65 },
     className: 'light',
     parentId: '4',
-    extent: 'parent',
+  
   },
   {
     id: '4b',
@@ -286,12 +287,14 @@ const NestedFlow = () => {
   
   const onNodeClick = (event:any, node: Node) => {
     connectingNodeId.current = node.id;
-    // console.log('click node', node);
+    console.log('click node', node);
     // console.log('event', event);
     setCurrentNodeLabel(node.data.label||"");
     setCurrentNodeBg(node.style?.backgroundColor||"rgba(255, 255, 255, 1)");
     setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
     setCurrentNodeType(node.type||"default");
+    const sortedNodes = [...nodes].sort((a, b) => (a.id === node.id ? 1 : (b.id === node.id ? -1 : 0)));
+    setNodes(sortedNodes);
   } 
 
   const onPaneClick = (event:any) => {
@@ -315,7 +318,7 @@ const NestedFlow = () => {
     // find overlapping nodes
     const intersectingNodes = getIntersectingNodes(node, false);
     setTarget(intersectingNodes ? intersectingNodes[0] : null);
-    console.log(target);
+   
   };
 
   const onNodeDragStart = (evt:any, node:Node) => {
@@ -328,10 +331,6 @@ const NestedFlow = () => {
   };
 
   
-  const onDragOver = useCallback((event:any) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  }, []);
 
 
   
@@ -391,25 +390,6 @@ const NestedFlow = () => {
       }),
     );
   }, [currentNodeBg, setNodes]);
-
-  useEffect(() => {
-    // whenever the target changes, we swap the colors
-    setNodes((nodes) =>
-      nodes.map((node) => {
-        if (node.id === dragRef.current?.id && target) {
-          return {
-            ...node,
-            style: {
-              ...node.style,
-              backgroundColor: target.style?.backgroundColor || "#fff",
-            },
-          }
-        }
-        return node;
-      }),
-    );
-  
-  }, [target, setNodes]);
   
 
   // 4) Change Node Type
@@ -426,6 +406,24 @@ const NestedFlow = () => {
       }),
     );
   }, [currentNodeType, setCurrentNodeType]);
+
+  // 5) Change Node ParentID
+  useEffect(() => {
+    // whenever the target changes, we swap the colors
+    setNodes((nodes) =>
+      nodes.map((node) => {
+        if (node.id === dragRef.current?.id && target) {
+          return {
+            ...node,
+            parentId: target.id || "",
+          }
+        }
+        return node;
+      }),
+    );
+  
+  }, [target, setNodes]);
+  
   return (
 
     <ReactFlow
@@ -450,7 +448,6 @@ const NestedFlow = () => {
       defaultEdgeOptions={defaultEdgeOptions}
       onNodeClick={onNodeClick}
       onPaneClick={onPaneClick}
-      onDragOver={onDragOver}
       
 
     >
