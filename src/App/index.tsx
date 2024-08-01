@@ -293,7 +293,14 @@ const NestedFlow = () => {
     setCurrentNodeBg(node.style?.backgroundColor||"rgba(255, 255, 255, 1)");
     setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
     setCurrentNodeType(node.type||"default");
-    const sortedNodes = [...nodes].sort((a, b) => (a.id === node.id ? 1 : (b.id === node.id ? -1 : 0)));
+    const sortedNodes = [...nodes].sort((a, b) => {
+      // Move nodes with parentId equal to the currentNodeId after the current node
+      // and the current node must not position after its child nodes
+      if (a.id === node.id && b.parentId !== node.id) return 1;
+      if (b.id === node.id && a.parentId !== node.id) return -1;
+    
+      return 0;
+    });
     setNodes(sortedNodes);
   } 
 
