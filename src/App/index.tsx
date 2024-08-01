@@ -57,7 +57,7 @@ const initialNodes: Node[] = [
     data: { label: 'Group A' },
     position: { x: 100, y: 100 },
     className: 'light',
-    style: { backgroundColor: 'rgba(255, 0, 0, 0.2)', width: 200, height: 200 },
+    style: { backgroundColor: 'rgba(235, 77, 75, 0.5)', width: 200, height: 200 },
   },
   {
     id: '2a',
@@ -85,7 +85,7 @@ const initialNodes: Node[] = [
     data: { label: 'Group B' },
     position: { x: 320, y: 200 },
     className: 'light',
-    style: { backgroundColor: 'rgba(255, 0, 0, 0.2)', width: 300, height: 300 },
+    style: { backgroundColor: 'rgba(235, 77, 75, 0.5)', width: 300, height: 300 },
   },
   {
     id: '4a',
@@ -103,7 +103,7 @@ const initialNodes: Node[] = [
     position: { x: 15, y: 120 },
     className: 'light',
     style: {
-      backgroundColor: 'rgba(255, 0, 255, 0.2)',
+      backgroundColor: 'rgba(224, 86, 253, 0.5)',
       height: 150,
       width: 270,
     },
@@ -185,7 +185,7 @@ const NestedFlow = () => {
   const onRestore = useCallback(() => {
     const restoreFlow = async () => {
       const storedData = localStorage.getItem(flowKey);
-      const flow = JSON.parse(storedData||"");
+      const flow = storedData ? JSON.parse(storedData) : "";
       if (flow) {
         const { x = 0, y = 0, zoom = 1 } = flow.viewport;
         setNodes(flow.nodes || []);
@@ -194,9 +194,8 @@ const NestedFlow = () => {
       }
     };
     restoreFlow();
-  }, [setNodes, setViewport]); 
+  }, [setNodes, setViewport]);
 
-  
 
   const onAdd = useCallback(() => {
     const {x, y, } = getViewport();
@@ -204,8 +203,8 @@ const NestedFlow = () => {
       id: nanoid(),
       data: { 
         label: 'Added node',
-        targetHandle: Position.Left,
-        sourceHandle: Position.Right,
+        targetHandle: Position.Top,
+        sourceHandle: Position.Bottom,
        },
       type: 'resizableNode',
       style: {
@@ -430,6 +429,8 @@ const NestedFlow = () => {
     );
   
   }, [target, setNodes]);
+
+  useEffect(() => {onRestore();}, []);
   
   return (
 
@@ -455,6 +456,7 @@ const NestedFlow = () => {
       defaultEdgeOptions={defaultEdgeOptions}
       onNodeClick={onNodeClick}
       onPaneClick={onPaneClick}
+      
       
 
     >
