@@ -517,8 +517,7 @@ const NestedFlow = () => {
         
       </div>
       </Panel>
-      <CollapseHandler />
-      <button className='hide-controls'></button>
+    
       <div className="updatenode__controls">
         <label className="updatenode__label">label:</label>
         <input value={currentNodeLabel} onChange={(evt) => setCurrentNodeLabel(evt.target.value)} />
