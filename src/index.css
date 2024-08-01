@@ -14,6 +14,7 @@ body,
 
 .react-flow__edge.selected{
   z-index: +1000;
+  color:#ff0e52;
 }
 
 .react-flow__node.highlight {
@@ -23,6 +24,7 @@ body,
 
 .react-flow__node.selected{
   z-index: 10 !important;
+  color:#ff0e52;
 }
 
 .react-flow__node {
@@ -49,6 +51,7 @@ body,
   padding: 10px;
   border-radius: 5px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin-right: 0rem;
 }
 
 .updatenode__controls label {
@@ -59,6 +62,23 @@ body,
 
 .updatenode__label {
   margin-top: 10px;
+}
+
+.hide-controls{
+  display:flex;
+  position: absolute;
+  right: 300px; /* 275 20 */
+  top: 60px;
+  width: 30px;       
+  height: 50px;      
+  background-color: whitesmoke; 
+  border-radius: 5px; 
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  align-items: center;
+  justify-content: left;
+}
+.bx-chevron-right {
+  font-size: 20px;
 }
 
 /* CSS */
@@ -138,15 +158,13 @@ body,
 .restore {
   left: 200px;
 }
-.export {
-  left: 320px;
-}
 
 
 .button-2-container {
   display: flex;
+  flex-direction: column;
   width:auto;
-  bottom:120px;
+  bottom:1000px;
   box-sizing: border-box;
   align-items: center;
   justify-content: center;

@@ -38,6 +38,9 @@ import ResizableNodeSelected from './ResizableNodeSelected';
 import { nanoid } from 'nanoid/non-secure';
 import ColorSwatch from './colorSwatch';
 import { getNodesBounds, isNode, } from 'reactflow';
+import DownloadButton from './downloadButton';
+import copyPasteHandler from './copyPasteHandler';
+import CollapseHandler from './collapseHandler';
 
 
 const flowKey = 'backup-flow';
@@ -148,6 +151,8 @@ const defaultEdgeOptions: DefaultEdgeOptions = {
   animated: true,
 };
 
+
+
 const NestedFlow = () => {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
@@ -161,7 +166,11 @@ const NestedFlow = () => {
   const updateNodeInternals = useUpdateNodeInternals();
   const [target, setTarget] = useState<any>(null);
   const dragRef = useRef<any>(null);
-
+  const connectingNodeId = useRef<string | null> (null);
+  const [currentNode, setCurrentNode] = useState<Node | any>(null);
+  
+  const nodeTypes:any = useMemo(() => ({ resizableNode: ResizableNodeSelected }), []);
+  
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
     [setNodes],
@@ -280,27 +289,29 @@ const NestedFlow = () => {
     edgeReconnectSuccessful.current = true;
   }, []);
 
-  const nodeTypes:any = useMemo(() => ({ resizableNode: ResizableNodeSelected }), []);
-  
-  const connectingNodeId = useRef<string | null> (null);
+
+
   
   const onNodeClick = (event:any, node: Node) => {
-    connectingNodeId.current = node.id;
-    console.log('click node', node);
-    // console.log('event', event);
-    setCurrentNodeLabel(node.data.label||"");
-    setCurrentNodeBg(node.style?.backgroundColor||"rgba(255, 255, 255, 1)");
-    setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
-    setCurrentNodeType(node.type||"default");
     const sortedNodes = [...nodes].sort((a, b) => {
       // Move nodes with parentId equal to the currentNodeId after the current node
       // and the current node must not position after its child nodes
       if (a.id === node.id && b.parentId !== node.id) return 1;
       if (b.id === node.id && a.parentId !== node.id) return -1;
-    
       return 0;
     });
+    connectingNodeId.current = node.id;
+    setCurrentNodeLabel(node.data.label||"");
+    setCurrentNodeBg(node.style?.backgroundColor||"rgba(255, 255, 255, 1)");
+    setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
+    setCurrentNodeType(node.type||"default");
     setNodes(sortedNodes);
+    setNodes((nds) =>
+      nds.map((n) =>
+        n.id === connectingNodeId.current ? { ...n, selected: !n.selected } : n
+      )
+    );
+    console.log('click node', node);
   } 
 
   const onPaneClick = (event:any) => {
@@ -332,6 +343,22 @@ const NestedFlow = () => {
   };
 
   const onNodeDragStop = (evt:any, node:Node) => {
+    const intersectingNodes = getIntersectingNodes(node, false);
+    console.log(intersectingNodes);
+    if (intersectingNodes.length == 0){
+      setNodes((nodes) =>
+        nodes.map((node) => {
+          console.log(connectingNodeId.current);
+          if (node.id === connectingNodeId?.current) {
+            return {
+              ...node,
+              parentId: '',
+            }
+          }
+          return node;
+        }),
+      );
+    }
     setTarget(null);
     dragRef.current = null;
   };
@@ -413,7 +440,7 @@ const NestedFlow = () => {
     );
   }, [currentNodeType, setCurrentNodeType]);
 
-  // 5) Change Node ParentID
+  // 5) Set Node ParentID
   useEffect(() => {
     // whenever the target changes, we swap the colors
     setNodes((nodes) =>
@@ -427,11 +454,11 @@ const NestedFlow = () => {
         return node;
       }),
     );
-  
   }, [target, setNodes]);
 
   useEffect(() => {onRestore();}, []);
   
+
   return (
 
     <ReactFlow
@@ -466,7 +493,8 @@ const NestedFlow = () => {
       
       <Panel position="bottom-left">
         <div className="button-2-container">
-          <button className="button-2" onClick={onAdd}><i className='bx bx-shape-square' ></i></button>
+          <button className="button-2" onClick={onAdd}><i className='bx bxs-shapes'></i></button>
+          <button className="button-2" onClick={() => {copyPasteHandler(rfInstance, setNodes, setEdges)}}><i className='bx bxs-duplicate' ></i></button>
         </div>
       </Panel>
     
@@ -478,10 +506,19 @@ const NestedFlow = () => {
         <div className="tooltip save">Save FlowChart Nodes in Browser Storage</div>
         <button className="button-1"  onClick={onRestore}><i className='bx bx-undo' ></i> Restore</button>
         <div className="tooltip restore">Restore FlowChart Nodes from Browser Storage</div>
-        <button className="button-1"  onClick={onExport}><i className='bx bx-export' ></i> Export</button>
-        <div className="tooltip export">Export FLowChart Nodes to JSON or PNG format</div>
+        
+        <div className="dropdown">
+          <button className="button-1" ><i className='bx bx-export' ></i> Export</button>
+            <div className="dropdown-content">
+              <button onClick={onExport}><i className='bx bxs-file-json' > JSON</i></button>
+              <DownloadButton />
+            </div>
+        </div>
+        
       </div>
       </Panel>
+      <CollapseHandler />
+      <button className='hide-controls'></button>
       <div className="updatenode__controls">
         <label className="updatenode__label">label:</label>
         <input value={currentNodeLabel} onChange={(evt) => setCurrentNodeLabel(evt.target.value)} />
@@ -491,7 +528,7 @@ const NestedFlow = () => {
         <ColorSwatch setCurrentNodeBg={setCurrentNodeBg}/>
         <div className="dropdown">
           <label className="updatenode__label">handle direction:</label>
-          <button className="dropbtn">{(CurrentNodeDirec)?"left right":"top down"||"top down"}</button>
+          <button className="dropbtn">{ CurrentNodeDirec ? "left right": "top down"}</button>
           <div className="dropdown-content">
             <button onClick={() => setCurrentNodeDirec(true)}>left right</button>
             <button onClick={() => setCurrentNodeDirec(false)}>top down</button>

@@ -17,8 +17,7 @@ const ResizableNodeSelected = ({ data, selected }) => {
   return (
     <>
       <NodeToolbar isVisible={data.toolbarVisible} position={data.toolbarPosition}>
-        <button style={buttonStyle}>reserve</button>
-        <button style={buttonStyle}>copy</button>
+        <button style={buttonStyle}>delete</button>
       </NodeToolbar>
       <NodeResizer
         color="#ff0071"
@@ -28,7 +27,7 @@ const ResizableNodeSelected = ({ data, selected }) => {
       />
 
       <TargetHandle position={data.targetHandle || Position.Top} />      
-      <div style={{ padding: 10 }}>{data.label}</div>
+      <div style={{ padding: 10, textAlign: "center"}}>{data.label}</div>
       <SourceHandle position={data.sourceHandle || Position.Bottom}/>
     </>
   );
