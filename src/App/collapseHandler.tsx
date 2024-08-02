@@ -3,17 +3,16 @@ import React from 'react';
 import {useState} from 'react';
 
 
-const CollapseHandler = () => {
-    const [collapsed, setCollapsed] = useState(false);
+const CollapseHandler = ({collapse, setCollapse}:any) => {
+
 
     const handleToggle = () => {
-        setCollapsed(!collapsed);
-        console.log(CollapseHandler);
+        setCollapse(!collapse);
     };
 
     return (
-        <div className={`hide-controls`} onClick={handleToggle}>
-            <i onClick={handleToggle} className={`bx ${collapsed ? 'bx-chevron-left' : 'bx-chevron-right'}`}></i>
+        <div className={collapse? `hide-controls-collapse` : `hide-controls`} onClick={handleToggle}>
+            <i onClick={handleToggle} className={`bx ${collapse ? 'bx-chevron-left' : 'bx-chevron-right'}`}></i>
         </div>
     );
 };

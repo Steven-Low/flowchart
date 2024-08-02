@@ -168,6 +168,7 @@ const NestedFlow = () => {
   const dragRef = useRef<any>(null);
   const connectingNodeId = useRef<string | null> (null);
   const [currentNode, setCurrentNode] = useState<Node | any>(null);
+  const [collapse, setCollapse] = useState(false);
   
   const nodeTypes:any = useMemo(() => ({ resizableNode: ResizableNodeSelected }), []);
   
@@ -328,9 +329,6 @@ const NestedFlow = () => {
     setCurrentNodeBg(node.style?.backgroundColor||"rgba(255, 255, 255, 1)");
     setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
     setCurrentNodeType(node.type||"default");
-    // calculate the center point of the node from position and dimensions
-    const centerX = node.position.x + (node.measured?.width || 0) / 2;
-    const centerY = node.position.y + (node.measured?.height || 0) / 2;
 
     // find overlapping nodes
     const intersectingNodes = getIntersectingNodes(node, false);
@@ -343,8 +341,13 @@ const NestedFlow = () => {
   };
 
   const onNodeDragStop = (evt:any, node:Node) => {
+    // find overlapping nodes
     const intersectingNodes = getIntersectingNodes(node, false);
+    // calculate the center point of the node from position and dimensions
+    const centerX = node.position.x; 
+    const centerY = node.position.y;
     console.log(intersectingNodes);
+    
     if (intersectingNodes.length == 0){
       setNodes((nodes) =>
         nodes.map((node) => {
@@ -361,6 +364,7 @@ const NestedFlow = () => {
     }
     setTarget(null);
     dragRef.current = null;
+
   };
 
   
@@ -454,6 +458,7 @@ const NestedFlow = () => {
         return node;
       }),
     );
+
   }, [target, setNodes]);
 
   useEffect(() => {onRestore();}, []);
@@ -490,7 +495,6 @@ const NestedFlow = () => {
       <MiniMap />
       <Controls />
       <Background  variant={BackgroundVariant.Dots}/>
-      
       <Panel position="bottom-left">
         <div className="button-2-container">
           <button className="button-2" onClick={onAdd}><i className='bx bxs-shapes'></i></button>
@@ -518,7 +522,7 @@ const NestedFlow = () => {
       </div>
       </Panel>
     
-      <div className="updatenode__controls">
+      <div className={collapse ? "updatenode__controls-collapse": "updatenode__controls"}>
         <label className="updatenode__label">label:</label>
         <input value={currentNodeLabel} onChange={(evt) => setCurrentNodeLabel(evt.target.value)} />
 
@@ -542,9 +546,8 @@ const NestedFlow = () => {
             <button onClick={() => setCurrentNodeType("default")}>Default Node</button>
           </div>
         </div>
-
-        
       </div>
+      <CollapseHandler collapse={collapse} setCollapse={setCollapse} />
    
     </ReactFlow>
 
@@ -560,3 +563,4 @@ const FlowWrapper = () => (
 );
 
 export default FlowWrapper;
+

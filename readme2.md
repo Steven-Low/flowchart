@@ -8,6 +8,9 @@ npm install --save typescript @types/node @types/react @types/react-dom @types/j
 npm install reactflow 
 npm install typescript@4.9.5
 npm install --legacy-peer-deps
+npm install html-to-png
+npm install react-router-dom@6
+
 
 # How to use?
 
