@@ -17,7 +17,7 @@ const copyPasteHandler = (reactFlowInstance, setNodes, setEdges) => {
       const newNode = JSON.parse(JSON.stringify(node));
       newNode.id = nanoid();
       newNode.type = "default";
-      newNode.selected = false;
+      newNode.selected = true;
       newNode.position = { x: node.position.x + 10, y: node.position.y + 10 }; // Offset position slightly
       hashmap[node.id] = newNode.id;
       return newNode;
@@ -29,7 +29,7 @@ const copyPasteHandler = (reactFlowInstance, setNodes, setEdges) => {
       newEdge.id = nanoid();
       newEdge.source = `${hashmap[edge.source]}`;
       newEdge.target = `${hashmap[edge.target]}`;
-      newEdge.selected = false;
+      newEdge.selected = true;
       return newEdge;
     });
 

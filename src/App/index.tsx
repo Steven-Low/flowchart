@@ -119,7 +119,6 @@ const initialNodes: Node[] = [
     position: { x: 20, y: 40 },
     className: 'light',
     parentId: '4b',
-    extent: 'parent',
   },
   {
     id: '4b2',
@@ -290,22 +289,40 @@ const NestedFlow = () => {
     edgeReconnectSuccessful.current = true;
   }, []);
 
+  const sortNodes = (nodes: Node[], currentNode:Node) => {
+    const moveNodeAndChildrenToEnd = (node:Node, allNodes: Node[]) => {
+      const children = allNodes.filter(n => n.parentId === node.id);
+      children.forEach(child => {
+        moveNodeAndChildrenToEnd(child, allNodes);
+      });
+      const index = allNodes.indexOf(node);
+      allNodes.push(...allNodes.splice(index, 1));
+    };
+    const nodesCopy = [...nodes];
+    moveNodeAndChildrenToEnd(currentNode, nodesCopy);
+    return nodesCopy;
+  };
 
-
-  
   const onNodeClick = (event:any, node: Node) => {
-    const sortedNodes = [...nodes].sort((a, b) => {
-      // Move nodes with parentId equal to the currentNodeId after the current node
-      // and the current node must not position after its child nodes
-      if (a.id === node.id && b.parentId !== node.id) return 1;
-      if (b.id === node.id && a.parentId !== node.id) return -1;
-      return 0;
-    });
+
     connectingNodeId.current = node.id;
     setCurrentNodeLabel(node.data.label||"");
     setCurrentNodeBg(node.style?.backgroundColor||"rgba(255, 255, 255, 1)");
     setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
     setCurrentNodeType(node.type||"default");
+
+    const children = nodes.filter(n => n.parentId === node.id);
+    console.log(children)
+    let sortedNodes: Node[];
+    if (children.length == 0){
+        sortedNodes = [...nodes].sort((a, b) => {
+        if (a.id === node.id) return 1;
+        if (b.id === node.id) return -1;
+        return 0;
+      });
+    }else{
+        sortedNodes = sortNodes(nodes,node);
+    }
     setNodes(sortedNodes);
     setNodes((nds) =>
       nds.map((n) =>
