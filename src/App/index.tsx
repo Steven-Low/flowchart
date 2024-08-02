@@ -291,12 +291,12 @@ const NestedFlow = () => {
 
   const sortNodes = (nodes: Node[], currentNode:Node) => {
     const moveNodeAndChildrenToEnd = (node:Node, allNodes: Node[]) => {
+      const index = allNodes.indexOf(node);
+      allNodes.push(...allNodes.splice(index, 1));
       const children = allNodes.filter(n => n.parentId === node.id);
       children.forEach(child => {
         moveNodeAndChildrenToEnd(child, allNodes);
       });
-      const index = allNodes.indexOf(node);
-      allNodes.push(...allNodes.splice(index, 1));
     };
     const nodesCopy = [...nodes];
     moveNodeAndChildrenToEnd(currentNode, nodesCopy);
