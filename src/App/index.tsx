@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { Link, useParams } from 'react-router-dom';
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
   ReactFlow,
@@ -34,6 +35,7 @@ import {
 } from '@xyflow/react';
 
 import '@xyflow/react/dist/style.css';
+import './app.css';
 import ResizableNodeSelected from './ResizableNodeSelected';
 import { nanoid } from 'nanoid/non-secure';
 import ColorSwatch from './colorSwatch';
@@ -41,9 +43,7 @@ import { getNodesBounds, isNode, } from 'reactflow';
 import DownloadButton from './downloadButton';
 import copyPasteHandler from './copyPasteHandler';
 import CollapseHandler from './collapseHandler';
-
-
-const flowKey = 'backup-flow';
+import useStorage from '../Storage/storage';
 
 
 const initialNodes: Node[] = [
@@ -168,6 +168,8 @@ const NestedFlow = () => {
   const connectingNodeId = useRef<string | null> (null);
   const [currentNode, setCurrentNode] = useState<Node | any>(null);
   const [collapse, setCollapse] = useState(false);
+  const { addFlowKey } = useStorage();
+  const { flowId } = useParams();
   
   const nodeTypes:any = useMemo(() => ({ resizableNode: ResizableNodeSelected }), []);
   
@@ -186,14 +188,16 @@ const NestedFlow = () => {
   const onSave = useCallback(() => {
     if (rfInstance) {
       const flow = rfInstance.toObject();
-      localStorage.setItem(flowKey, JSON.stringify(flow));
-      console.log(localStorage);
+      if(flowId !== "flowKey"){
+        addFlowKey(flowId||"default");
+        localStorage.setItem(flowId||"default", JSON.stringify(flow));
+      }
     }
   }, [rfInstance]);
 
   const onRestore = useCallback(() => {
     const restoreFlow = async () => {
-      const storedData = localStorage.getItem(flowKey);
+      const storedData = localStorage.getItem(flowId||"default");
       const flow = storedData ? JSON.parse(storedData) : "";
       if (flow) {
         const { x = 0, y = 0, zoom = 1 } = flow.viewport;
@@ -478,7 +482,9 @@ const NestedFlow = () => {
 
   }, [target, setNodes]);
 
-  useEffect(() => {onRestore();}, []);
+  useEffect(() => {
+    onRestore();
+  }, [flowId]);
   
 
   return (
@@ -521,6 +527,7 @@ const NestedFlow = () => {
     
       <Panel position="top-left">
       <div className='button-1-container'>
+        <Link to="/"><button className='button-1' ><i className='bx bx-home'> Home</i></button></Link>
         <button className="button-1"  onClick={onImport}><i className='bx bx-folder-open' > Open</i></button>
         <div className="tooltip open">Open FlowChart Nodes from JSON Backup (Not Save Automatically)</div>
         <button className="button-1"  onClick={onSave}><i className='bx bx-save'></i> Save</button>
@@ -573,11 +580,6 @@ const NestedFlow = () => {
 
 
 
-const FlowWrapper = () => (
-  <ReactFlowProvider>
-    <NestedFlow />
-  </ReactFlowProvider>
-);
 
-export default FlowWrapper;
+export default NestedFlow;
 

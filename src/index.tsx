@@ -5,7 +5,6 @@ import {
   BrowserRouter,
   Routes,
   Route,
-
  } from 'react-router-dom';
  
 import App from './App';
@@ -16,11 +15,13 @@ import './index.css';
  
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <BrowserRouter>
-    <Routes>
-      <Route path="/" element={<App />} />
-      <Route path="/home" element={<Home />} />
-    </Routes>
-    </BrowserRouter>
+    <ReactFlowProvider>
+      <BrowserRouter>
+      <Routes>
+        <Route path="/flowchart/:flowId" element={<App/>} />
+        <Route path="/" element={<Home />} />
+      </Routes>
+      </BrowserRouter>
+    </ReactFlowProvider>
   </React.StrictMode>,
 );
