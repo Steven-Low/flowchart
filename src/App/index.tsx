@@ -163,7 +163,6 @@ const NestedFlow = () => {
   const [CurrentNodeDirec, setCurrentNodeDirec] = useState(false);
   const [currentNodeType, setCurrentNodeType] = useState('default');
   const updateNodeInternals = useUpdateNodeInternals();
-  const [target, setTarget] = useState<any>(null);
   const dragRef = useRef<any>(null);
   const connectingNodeId = useRef<string | null> (null);
   const [currentNode, setCurrentNode] = useState<Node | any>(null);
@@ -314,25 +313,6 @@ const NestedFlow = () => {
     setCurrentNodeBg(node.style?.backgroundColor||"rgba(255, 255, 255, 1)");
     setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
     setCurrentNodeType(node.type||"default");
-
-    const children = nodes.filter(n => n.parentId === node.id);
-    console.log(children)
-    let sortedNodes: Node[];
-    if (children.length == 0){
-        sortedNodes = [...nodes].sort((a, b) => {
-        if (a.id === node.id) return 1;
-        if (b.id === node.id) return -1;
-        return 0;
-      });
-    }else{
-        sortedNodes = sortNodes(nodes,node);
-    }
-    setNodes(sortedNodes);
-    setNodes((nds) =>
-      nds.map((n) =>
-        n.id === connectingNodeId.current ? { ...n, selected: !n.selected } : n
-      )
-    );
     console.log('click node', node);
   } 
 
@@ -350,42 +330,94 @@ const NestedFlow = () => {
     setCurrentNodeBg(node.style?.backgroundColor||"rgba(255, 255, 255, 1)");
     setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
     setCurrentNodeType(node.type||"default");
-
-    // find overlapping nodes
-    const intersectingNodes = getIntersectingNodes(node, false);
-    setTarget(intersectingNodes ? intersectingNodes[0] : null);
-   
+    
   };
-
+  
   const onNodeDragStart = (evt:any, node:Node) => {
-    dragRef.current = node;
+    connectingNodeId.current = node.id;
+    setCurrentNodeLabel(node.data.label||"");
+    setCurrentNodeBg(node.style?.backgroundColor||"rgba(255, 255, 255, 1)");
+    setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
+    setCurrentNodeType(node.type||"default");
+
+    const children = nodes.filter(n => n.parentId === node.id);
+    let sortedNodes: Node[];
+    if (children.length == 0){
+        sortedNodes = [...nodes].sort((a, b) => {
+        if (a.id === node.id) return 1;
+        if (b.id === node.id) return -1;
+        return 0;
+      });
+    }else{
+        sortedNodes = sortNodes(nodes,node);
+    }
+    setNodes(sortedNodes);
+    setNodes((nds) =>
+      nds.map((n) =>
+        n.id === connectingNodeId.current ? { ...n, selected: !n.selected } : n
+      )
+    );
   };
+
+
+  const findAbsolutePosition = (currentNode: Node, allNodes: Node[]): { x: number, y: number } => {
+      if (!currentNode.parentId) {
+        return { x: currentNode.position.x, y: currentNode.position.y };
+      }
+  
+      const parentNode = allNodes.find(n => n.id === currentNode.parentId);
+      if (!parentNode) {
+        throw new Error(`Parent node with id ${currentNode.parentId} not found`);
+      }
+  
+      const parentPosition = findAbsolutePosition(parentNode, allNodes);
+      return {
+        x: parentPosition.x + currentNode.position.x,
+        y: parentPosition.y + currentNode.position.y
+      };
+  };
+
 
   const onNodeDragStop = (evt:any, node:Node) => {
     // find overlapping nodes
     const intersectingNodes = getIntersectingNodes(node, false);
-    // calculate the center point of the node from position and dimensions
-    const centerX = node.position.x; 
-    const centerY = node.position.y;
-    console.log(intersectingNodes);
-    
+    console.log("onNodeDragStop", intersectingNodes[intersectingNodes.length - 1]);
     if (intersectingNodes.length == 0){
       setNodes((nodes) =>
         nodes.map((node) => {
-          console.log(connectingNodeId.current);
-          if (node.id === connectingNodeId?.current) {
+          const targetNode = nodes.find(n => n.id === node.parentId)
+          if (node.id === connectingNodeId?.current && targetNode) {
+            const absolutePosition = findAbsolutePosition(node, nodes);
             return {
               ...node,
               parentId: '',
+              position: absolutePosition,
+            }
+          }
+          return node;
+        }),
+      );
+    }else{
+      const targetNode = intersectingNodes[intersectingNodes.length -1];
+      console.log("target: ",targetNode);
+      setNodes((nodes) =>
+        nodes.map((node) => {
+          if (node.id === connectingNodeId.current && node.parentId !== targetNode.id) {
+            const targetX = targetNode.position.x; 
+            const targetY = targetNode.position.y;
+            const currentAbsolutePosition = findAbsolutePosition(node,nodes);
+            const targetAbsolutePosition = findAbsolutePosition(targetNode, nodes);
+            return {
+              ...node,
+              parentId: intersectingNodes[intersectingNodes.length - 1].id,
+              position: {x: currentAbsolutePosition.x - targetAbsolutePosition.x, y: currentAbsolutePosition.y - targetAbsolutePosition.y}
             }
           }
           return node;
         }),
       );
     }
-    setTarget(null);
-    dragRef.current = null;
-
+   
   };
 
   
@@ -465,22 +497,6 @@ const NestedFlow = () => {
     );
   }, [currentNodeType, setCurrentNodeType]);
 
-  // 5) Set Node ParentID
-  useEffect(() => {
-    // whenever the target changes, we swap the colors
-    setNodes((nodes) =>
-      nodes.map((node) => {
-        if (node.id === dragRef.current?.id && target) {
-          return {
-            ...node,
-            parentId: target.id || "",
-          }
-        }
-        return node;
-      }),
-    );
-
-  }, [target, setNodes]);
 
   useEffect(() => {
     onRestore();
