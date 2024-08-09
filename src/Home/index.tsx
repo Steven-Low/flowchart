@@ -12,7 +12,7 @@ const HomeWrapper = () => {
     const addFlow = () => {
         const id = prompt("Please enter an unique flowchart name: ");
         if(["flowKey", "thumbnails", "", null, ...flowKey].includes(id)){
-            alert(`The key ${id} is reserved or empty. Please enter a valid key.`)
+            alert(`The key ${id} is reserved or already used. Please enter a valid key.`)
         }else{
             navigate(`/flowchart/${id}`);
         }

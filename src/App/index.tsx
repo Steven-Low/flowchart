@@ -164,7 +164,7 @@ const NestedFlow = () => {
   const updateNodeInternals = useUpdateNodeInternals();
   const dragRef = useRef<any>(null);
   const connectingNodeId = useRef<string | null> (null);
-  const [currentNode, setCurrentNode] = useState<Node | any>(null);
+  const [intersectingNode, setIntersectingNode] = useState<Node | any>(null);
   const [collapse, setCollapse] = useState(false);
   const { addFlowKey } = useStorage();
   const { flowId } = useParams();
@@ -298,6 +298,7 @@ const NestedFlow = () => {
     setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
     setCurrentNodeType(node.type||"default");
     console.log('click node', node);
+
   } 
 
   const onPaneClick = (event:any) => {
@@ -306,6 +307,7 @@ const NestedFlow = () => {
     setCurrentNodeBg("");
     setCurrentNodeDirec(false);
     setCurrentNodeType("");
+    setIntersectingNode(null);
   }
 
   const sortNodes = (node:Node, nodes: Node[]) => {
@@ -321,16 +323,25 @@ const NestedFlow = () => {
 
     return nodes;
   };
+  
+  const findAbsolutePosition = (currentNode: Node, allNodes: Node[]): { x: number, y: number } => {
+    if (!currentNode?.parentId) {
+      return { x: currentNode.position.x, y: currentNode.position.y };
+    }
 
-  const onNodeDrag:any = (_: MouseEvent, node:Node)=> {
-    connectingNodeId.current = node.id;
-    setCurrentNodeLabel(node.data.label||"");
-    setCurrentNodeBg(node.style?.backgroundColor||"rgba(255, 255, 255, 1)");
-    setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
-    setCurrentNodeType(node.type||"default");
-    updateNodeInternals(connectingNodeId.current||"");
-    
-  };
+    const parentNode = allNodes.find(n => n.id === currentNode.parentId);
+    if (!parentNode) {
+      return { x: currentNode.position.x, y: currentNode.position.y };
+      //throw new Error(`Parent node with id ${currentNode.parentId} not found`);
+    }
+
+    const parentPosition = findAbsolutePosition(parentNode, allNodes);
+    return {
+      x: parentPosition.x + currentNode.position.x,
+      y: parentPosition.y + currentNode.position.y
+    };
+};
+
   
   const onNodeDragStart = (evt:any, node:Node) => {
     connectingNodeId.current = node.id;
@@ -338,7 +349,34 @@ const NestedFlow = () => {
     setCurrentNodeBg(node.style?.backgroundColor||"rgba(255, 255, 255, 1)");
     setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
     setCurrentNodeType(node.type||"default");
+    setNodes((nodes) =>
+      nodes.map((n) => {
+        if (n.id === node.id) {
+          const absolutePosition = findAbsolutePosition(n, nodes);
+            return {
+              ...n,
+              parentId: '',
+              position: absolutePosition,
+            };
+        }
+        return n;
+      })
+    );
+  };
 
+  const onNodeDrag:any = (_: MouseEvent, node:Node)=> {
+    connectingNodeId.current = node.id;
+    setCurrentNodeLabel(node.data.label||"");
+    setCurrentNodeBg(node.style?.backgroundColor||"rgba(255, 255, 255, 1)");
+    setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
+    setCurrentNodeType(node.type||"default");
+    const intersectingNodes = getIntersectingNodes(node, false);
+    setIntersectingNode(intersectingNodes[intersectingNodes.length -1]);
+  };
+
+
+  const onNodeDragStop = (evt: any, node: Node) => {
+    const connectingNodeIdCurrent = connectingNodeId?.current;
     const children = nodes.filter(n => n.parentId === node.id);
     let sortedNodes: Node[];
     if (children.length == 0){
@@ -351,57 +389,27 @@ const NestedFlow = () => {
         sortedNodes = sortNodes(node, nodes);
     }
     setNodes(sortedNodes);
-  };
-
-
-  const findAbsolutePosition = (currentNode: Node, allNodes: Node[]): { x: number, y: number } => {
-      if (!currentNode.parentId) {
-        return { x: currentNode.position.x, y: currentNode.position.y };
-      }
-  
-      const parentNode = allNodes.find(n => n.id === currentNode.parentId);
-      if (!parentNode) {
-        throw new Error(`Parent node with id ${currentNode.parentId} not found`);
-      }
-  
-      const parentPosition = findAbsolutePosition(parentNode, allNodes);
-      return {
-        x: parentPosition.x + currentNode.position.x,
-        y: parentPosition.y + currentNode.position.y
-      };
-  };
-
-
-  const onNodeDragStop = useCallback((evt: any, node: Node) => {
-    const intersectingNodes = getIntersectingNodes(node, false);
-    const targetNode = nodes.find(n => n.id === node.parentId);
-    const rect = getNodesBounds([node, targetNode || node]);
-    const connectingNodeIdCurrent = connectingNodeId?.current;
-  
+    // update node interval after nodes sorting
+    updateNodeInternals(node.id||"");
+    
     setNodes((nodes) =>
       nodes.map((n) => {
         if (n.id === connectingNodeIdCurrent) {
           const absolutePosition = findAbsolutePosition(n, nodes);
-          // Check if the dragging node is still within the bound of parent node
-          if (targetNode && targetNode.width === rect.width && targetNode.height === rect.height) {
-            return {
-              ...n,
-              parentId: targetNode.id,
-            };
-          // Check if the dragging node is to the empty pane
-          } else if (intersectingNodes.length === 0) {
+          
+          if (!intersectingNode) {
+            console.log("condition 2");
             return {
               ...n,
               parentId: '',
               position: absolutePosition,
             };
-          // Switch the parent node of the dragging node
-          } else {
-            const lastIntersectingNode = intersectingNodes[intersectingNodes.length - 1];
-            const targetAbsolutePosition = findAbsolutePosition(lastIntersectingNode, nodes);
+          } else if(n.id !== intersectingNode.id){
+            console.log("condition 3");
+            const targetAbsolutePosition = findAbsolutePosition(intersectingNode, nodes);
             return {
               ...n,
-              parentId: lastIntersectingNode.id,
+              parentId: intersectingNode.id,
               position: {
                 x: absolutePosition.x - targetAbsolutePosition.x,
                 y: absolutePosition.y - targetAbsolutePosition.y,
@@ -412,7 +420,8 @@ const NestedFlow = () => {
         return n;
       })
     );
-  }, []);
+  }
+  
   
 
 
