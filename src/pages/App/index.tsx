@@ -3,33 +3,22 @@ import { Link, useParams } from 'react-router-dom';
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
   ReactFlow,
-  addEdge,
   MiniMap,
   Controls,
   Background,
   BackgroundVariant,
   SelectionMode,
-  applyNodeChanges,
-  applyEdgeChanges,
   useReactFlow,
   Panel,
   reconnectEdge,
   Position,
   useUpdateNodeInternals,
-  
-  useStore,
-  
-  type Node,
-  type Edge,
-  type FitViewOptions,
-  type OnConnect,
-  type OnNodesChange,
-  type OnEdgesChange,
 
+
+  type Node,
+  type FitViewOptions,
   type ReactFlowInstance,
   type DefaultEdgeOptions,
-  type Viewport,
-  type ReactFlowState,
 } from '@xyflow/react';
 
 // import style
@@ -38,7 +27,6 @@ import './app.css';
 
 // import components
 import ResizableNodeSelected from '../../components/resizableNodeSelected';
-import { nanoid } from 'nanoid/non-secure';
 import ColorSwatch from '../../components/colorSwatch';
 import DownloadButton from '../../components/downloadButton';
 import CollapseHandler from '../../components/collapseHandler';
@@ -47,102 +35,8 @@ import SelectionBox from '../../components/selectionBox';
 // import utils
 import copyPasteUtil from '../../utils/copyPasteUtil';
 import useStorage from '../../utils/storage';
-
-
-const initialNodes: Node[] = [
-  {
-    id: '1',
-    type: 'input',
-    data: { label: 'Node 0' },
-    position: { x: 250, y: 5 },
-    className: 'light',
-  },
-  {
-    id: '2',
-    type: 'default',
-    data: { label: 'Group A' },
-    position: { x: 100, y: 100 },
-    className: 'light',
-    style: { backgroundColor: 'rgba(235, 77, 75, 0.5)', width: 200, height: 200 },
-  },
-  {
-    id: '2a',
-    type: 'default',
-    data: { label: 'Node A.1' },
-    position: { x: 10, y: 50 },
-    parentId: '2',
-  },
-  {
-    id: '3',
-    type: 'resizableNode',
-    data: { label: 'Node 1' },
-    position: { x: 320, y: 100 },
-    className: 'light',
-    style: {
-      background: '#fff',
-      border: '1px solid blue',
-      borderRadius: 15,
-      fontSize: 12,
-    }
-  },
-  {
-    id: '4',
-    type: 'default',
-    data: { label: 'Group B' },
-    position: { x: 320, y: 200 },
-    className: 'light',
-    style: { backgroundColor: 'rgba(235, 77, 75, 0.5)', width: 300, height: 300 },
-  },
-  {
-    id: '4a',
-    type: 'default',
-    data: { label: 'Node B.1' },
-    position: { x: 15, y: 65 },
-    className: 'light',
-    parentId: '4',
-  
-  },
-  {
-    id: '4b',
-    type: 'default',
-    data: { label: 'Group B.A' },
-    position: { x: 15, y: 120 },
-    className: 'light',
-    style: {
-      backgroundColor: 'rgba(224, 86, 253, 0.5)',
-      height: 150,
-      width: 270,
-    },
-    parentId: '4',
-  },
-  {
-    id: '4b1',
-    type: 'default',
-    data: { label: 'Node B.A.1' },
-    position: { x: 20, y: 40 },
-    className: 'light',
-    parentId: '4b',
-  },
-  {
-    id: '4b2',
-    type: 'default',
-    data: { label: 'Node B.A.2' },
-    position: { x: 100, y: 100 },
-    className: 'light',
-    parentId: '4b',
-  },
-];
-
-const initialEdges = [
-  { id: 'e1-2', source: '1', target: '2', animated: true },
-  { id: 'e1-3', source: '1', target: '3' },
-  { id: 'e2a-4a', source: '2a', target: '4a' },
-  { id: 'e3-4b', source: '3', target: '4b' },
-  { id: 'e4a-4b1', source: '4a', target: '4b1' },
-  { id: 'e4a-4b2', source: '4a', target: '4b2' },
-  { id: 'e4b1-4b2', source: '4b1', target: '4b2' },
-];
-
+import useStore from '../../utils/store';
+import { sortNodes, findAbsolutePosition } from '../../utils/functions';
 
 
 const fitViewOptions: FitViewOptions = {
@@ -156,8 +50,6 @@ const defaultEdgeOptions: DefaultEdgeOptions = {
 
 
 const NestedFlow = () => {
-  const [nodes, setNodes] = useState<Node[]>(initialNodes);
-  const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   const { setViewport, getIntersectingNodes, screenToFlowPosition } = useReactFlow();
   const edgeReconnectSuccessful = useRef(true);
@@ -179,115 +71,24 @@ const NestedFlow = () => {
   const [height, setHeight] = useState('0px');
   const [startX, setStartX] = useState<number>(0);
   const [startY, setStartY] = useState<number>(0);
-
-
-
   const nodeTypes:any = useMemo(() => ({ resizableNode: ResizableNodeSelected }), []);
   
-  const onNodesChange: OnNodesChange = useCallback(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
-    [setNodes],
-  );
-  const onEdgesChange: OnEdgesChange = useCallback(
-    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [setEdges],
-  );
-  const onConnect: OnConnect = useCallback((connection) => {
-    setEdges((eds) => addEdge(connection, eds));
-  }, [setEdges]);
-
-  const onSave = useCallback(() => {
-    if (rfInstance) {
-      const flow = rfInstance.toObject();
-      if(flowId !== "flowKey"){
-        addFlowKey(flowId||"default");
-        localStorage.setItem(flowId||"default", JSON.stringify(flow));
-      }
-    }
-  }, [rfInstance, addFlowKey, flowId]);
-
-  const onRestore = useCallback(() => {
-    const restoreFlow = async () => {
-      const storedData = localStorage.getItem(flowId||"default");
-      const flow = storedData ? JSON.parse(storedData) : "";
-      if (flow) {
-        const { x = 0, y = 0, zoom = 1 } = flow.viewport;
-        setNodes(flow.nodes || []);
-        setEdges(flow.edges || []);
-        setViewport({ x, y, zoom });
-      }
-    };
-    restoreFlow();
-  }, [setNodes, setViewport, flowId]);
+  const { 
+    nodes, 
+    edges, 
+    setNodes, 
+    setEdges, 
+    onNodesChange, 
+    onEdgesChange, 
+    onConnect,
+    onExport,
+    onImport,
+    onSave,
+    onRestore,
+    onAdd,
+   } = useStore();
 
 
-  const onAdd = useCallback(() => {
-    const {x, y, } = screenToFlowPosition({x:window.innerWidth/2, y:window.innerHeight/2});
-    console.log(x,y);
-    const newNode = {
-      id: nanoid(),
-      data: { 
-        label: 'Added node',
-        targetHandle: Position.Top,
-        sourceHandle: Position.Bottom,
-       },
-      type: 'resizableNode',
-      style: {
-        background: '#fff',
-        border: '1px solid black',
-        borderRadius: 15,
-        fontSize: 12,
-      },
-      position: {
-        x: x,
-        y: y,
-      },
-    };
-    setNodes((nds) => nds.concat(newNode));
-  }, [setNodes, screenToFlowPosition]);
-
-  const onExport = () => {
-    const content = JSON.stringify(rfInstance?.toObject(),null,2)
-    const blob = new Blob([content], {type:'text/plain'});
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'backup.json';
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const onImport = () => {
-    const inputElement = document.createElement('input')
-    inputElement.setAttribute("type","file");
-    inputElement.setAttribute("id","importNodes");
-    inputElement.setAttribute("accept",".json,.txt");
-    inputElement.style.display = "none";
-    inputElement.click();
-    inputElement.addEventListener('change', (e) => {
-        const input = e.target as HTMLInputElement;
-        if (input.files?.length){
-          const reader = new FileReader();
-          reader.readAsText(input.files[0])
-          reader.onload = () => {
-            const fileContent = reader.result?.toString() || "";
-            console.log(fileContent); // Do something with the file content
-            const restoreFlow = async () => {
-              const flow = JSON.parse(fileContent);
-              if (flow) {
-                const { x = 0, y = 0, zoom = 1 } = flow.viewport;
-                setNodes(flow.nodes || []);
-                setEdges(flow.edges || []);
-                setViewport({ x, y, zoom });
-              }
-            };
-            restoreFlow();
-          };
-        }
-      }
-    )
-  }
-  
   const onReconnectStart = useCallback(() => {
     edgeReconnectSuccessful.current = false;
   }, []);
@@ -301,7 +102,6 @@ const NestedFlow = () => {
     if (!edgeReconnectSuccessful.current) {
       setEdges((eds) => eds.filter((e) => e.id !== edge.id));
     }
-
     edgeReconnectSuccessful.current = true;
   }, []);
 
@@ -312,50 +112,16 @@ const NestedFlow = () => {
     setCurrentNodeDirec(node.data.targetHandle === Position.Left || node.data.sourceHandle === Position.Right)
     setCurrentNodeType(node.type||"default");
     console.log('click node', node);
-
   } 
 
-  const onPaneClick = (event:any) => {
+  const onPaneClick = useCallback((event:any) => {
     connectingNodeId.current = null;
     setCurrentNodeLabel("")
     setCurrentNodeBg("");
     setCurrentNodeDirec(false);
     setCurrentNodeType("");
     setIntersectingNode(null);
-
-  }
-
-  const sortNodes = (node:Node, nodes: Node[]) => {
-      nodes = [...nodes].sort((a, b) => {
-        if (a.id === node.id) return 1;
-        if (b.id === node.id) return -1;
-        return 0;
-      });
-      const children = nodes.filter(n => n.parentId === node.id);
-      children.forEach(child => {
-        nodes = sortNodes(child, nodes);
-      });
-
-    return nodes;
-  };
-
-  const findAbsolutePosition = (currentNode: Node, allNodes: Node[]): { x: number, y: number } => {
-    if (!currentNode?.parentId) {
-      return { x: currentNode.position.x, y: currentNode.position.y };
-    }
-
-    const parentNode = allNodes.find(n => n.id === currentNode.parentId);
-    if (!parentNode) {
-      return { x: currentNode.position.x, y: currentNode.position.y };
-      //throw new Error(`Parent node with id ${currentNode.parentId} not found`);
-    }
-
-    const parentPosition = findAbsolutePosition(parentNode, allNodes);
-    return {
-      x: parentPosition.x + currentNode.position.x,
-      y: parentPosition.y + currentNode.position.y
-    };
-};
+  }, []);
 
   
   const onNodeDragStart = (evt:any, node:Node) => {
@@ -434,7 +200,7 @@ const NestedFlow = () => {
     );
   }
 
-  const onMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
+const onMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
     setSelectionBox(true);
     setStartX(e.clientX);
     setStartY(e.clientY);
@@ -460,11 +226,15 @@ const onMouseUp: React.MouseEventHandler<HTMLDivElement> = (event) => {
     setDisplay('none');
 }
 
-
-
   
   // *** EDITING TOOLBARS *** //
-  // 1) Change Node Label Name
+  /*
+  1) Change Label
+  2) Change Handle Direction
+  3) Change Node Background Color
+  4) Change Node Type
+
+  */
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => {
@@ -474,72 +244,26 @@ const onMouseUp: React.MouseEventHandler<HTMLDivElement> = (event) => {
             data: {
               ...node.data,
               label: currentNodeLabel,
-            },
-          };
-        }
-        return node;
-      }),
-    );
-  }, [currentNodeLabel, setNodes]);
-
-  // 2) Change Node Handle Direction (LR/TB)
-  useEffect(() => {
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === connectingNodeId.current) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
               targetHandle: (CurrentNodeDirec) ? Position.Left : Position.Top,
               sourceHandle: (CurrentNodeDirec) ? Position.Right : Position.Bottom,
             },
-          };
-        }
-        return node;
-      }),
-    );
-    updateNodeInternals(connectingNodeId.current||"");
-  }, [CurrentNodeDirec, updateNodeInternals, setNodes]);
-
-  // 3) Change Node Background Color 
-  useEffect(() => {
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === connectingNodeId.current) {
-          return {
-            ...node,
             style: {
               ...node.style,
               backgroundColor: currentNodeBg,
             },
-          };
-        }
-        return node;
-      }),
-    );
-  }, [currentNodeBg, setNodes]);
-  
-
-  // 4) Change Node Type
-  useEffect(() => {
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === connectingNodeId.current) {
-          return {
-            ...node,
             type: currentNodeType,
           };
         }
         return node;
       }),
     );
-  }, [currentNodeType, setCurrentNodeType]);
+    updateNodeInternals(connectingNodeId.current || "");
+  }, [currentNodeLabel, CurrentNodeDirec, currentNodeBg, currentNodeType, setNodes, updateNodeInternals]);
 
 
   useEffect(() => {
-    onRestore();
-  }, [onRestore, flowId]);
+    onRestore(flowId, setViewport);
+  }, [onRestore, flowId, setViewport]);
   
 
   return (
@@ -580,7 +304,7 @@ const onMouseUp: React.MouseEventHandler<HTMLDivElement> = (event) => {
       <Background  variant={BackgroundVariant.Dots}/>
       <Panel position="bottom-left">
         <div className="button-2-container">
-          <button className="button-2" onClick={onAdd}><i className='bx bxs-shapes'></i></button>
+          <button className="button-2" onClick={() => onAdd(screenToFlowPosition)}><i className='bx bxs-shapes'></i></button>
           <button className="button-2" onClick={() => {copyPasteUtil(rfInstance, setNodes, setEdges)}}><i className='bx bxs-duplicate' ></i></button>
         </div>
       </Panel>
@@ -588,17 +312,17 @@ const onMouseUp: React.MouseEventHandler<HTMLDivElement> = (event) => {
       <Panel position="top-left">
       <div className='button-1-container'>
         <Link to="/"><button className='button-1' ><i className='bx bx-home'> Home</i></button></Link>
-        <button className="button-1"  onClick={onImport}><i className='bx bx-folder-open' > Open</i></button>
+        <button className="button-1"  onClick={() => onImport(setViewport)}><i className='bx bx-folder-open' > Open</i></button>
         <div className="tooltip open">Open FlowChart Nodes from JSON Backup (Not Save Automatically)</div>
-        <button className="button-1"  onClick={onSave}><i className='bx bx-save'></i> Save</button>
+        <button className="button-1"  onClick={() => onSave(rfInstance, flowId, addFlowKey)}><i className='bx bx-save'></i> Save</button>
         <div className="tooltip save">Save FlowChart Nodes in Browser Storage</div>
-        <button className="button-1"  onClick={onRestore}><i className='bx bx-undo' ></i> Restore</button>
+        <button className="button-1"  onClick={() => onRestore(flowId, setViewport)}><i className='bx bx-undo' ></i> Restore</button>
         <div className="tooltip restore">Restore FlowChart Nodes from Browser Storage</div>
         
         <div className="dropdown">
           <button className="button-1" ><i className='bx bx-export' ></i> Export</button>
             <div className="dropdown-content">
-              <button onClick={onExport}><i className='bx bxs-file-json' > JSON</i></button>
+              <button onClick={() => onExport(rfInstance)}><i className='bx bxs-file-json' > JSON</i></button>
               <DownloadButton />
             </div>
         </div>
