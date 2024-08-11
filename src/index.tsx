@@ -7,8 +7,8 @@ import {
   Route,
  } from 'react-router-dom';
  
-import App from './App';
-import Home from './Home';
+import App from './pages/App';
+import Home from './pages/Home';
 
 import './index.css';
 

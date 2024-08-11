@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {memo} from 'react';
 import {
   Panel,
   useReactFlow,
@@ -52,4 +52,4 @@ function DownloadButton() {
   );
 }
 
-export default DownloadButton;
+export default memo(DownloadButton);

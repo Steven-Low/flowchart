@@ -2,7 +2,7 @@
 import { useCallback } from 'react';
 import { nanoid } from 'nanoid/non-secure';
 
-const copyPasteHandler = (reactFlowInstance, setNodes, setEdges) => {
+const copyPasteUtil = (reactFlowInstance, setNodes, setEdges) => {
 
   // Get selected nodes and edges
   const selectedNodes = reactFlowInstance.getNodes().filter(node => node.selected);
@@ -10,16 +10,20 @@ const copyPasteHandler = (reactFlowInstance, setNodes, setEdges) => {
 
   if (selectedNodes.length !== 0) {
     // Save nodes id pairs
-    const hashmap = {}
+    const hashmap = {};
+    selectedNodes.forEach(node => {
+      const newId = nanoid();
+      hashmap[node.id] = newId;
+    })
 
     // Duplicate selected nodes
     const duplicateNodes = selectedNodes.map(node => {
       const newNode = JSON.parse(JSON.stringify(node));
-      newNode.id = nanoid();
+      newNode.id = hashmap[node.id];
       newNode.type = "default";
-      newNode.selected = true;
+
       newNode.position = { x: node.position.x + 10, y: node.position.y + 10 }; // Offset position slightly
-      hashmap[node.id] = newNode.id;
+      newNode.parentId = hashmap[node.parentId] || "";
       return newNode;
     });
 
@@ -29,7 +33,7 @@ const copyPasteHandler = (reactFlowInstance, setNodes, setEdges) => {
       newEdge.id = nanoid();
       newEdge.source = `${hashmap[edge.source]}`;
       newEdge.target = `${hashmap[edge.target]}`;
-      newEdge.selected = true;
+
       return newEdge;
     });
 
@@ -57,4 +61,4 @@ const copyPasteHandler = (reactFlowInstance, setNodes, setEdges) => {
   } 
 };
 
-export default copyPasteHandler;
+export default copyPasteUtil;

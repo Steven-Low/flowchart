@@ -1,5 +1,5 @@
 import { memo } from 'react';
-
+import React from 'react';
 import { Handle, Position, NodeResizer, NodeToolbar} from '@xyflow/react';
 import { SourceHandle, TargetHandle } from './customHandle';
 
@@ -12,7 +12,7 @@ const buttonStyle = {
 
 
 
-const ResizableNodeSelected = ({ data, selected }) => {
+const ResizableNodeSelected = ({ data, selected }:any) => {
   //      <Handle type="target" position={Position.Top} />
   return (
     <>

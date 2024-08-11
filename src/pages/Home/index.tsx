@@ -1,6 +1,6 @@
 import React from 'react';
 import "./home.css";
-import useStorage from '../Storage/storage';
+import useStorage from '../../utils/storage';
 import { useNavigate } from 'react-router-dom';
 
 const HomeWrapper = () => {

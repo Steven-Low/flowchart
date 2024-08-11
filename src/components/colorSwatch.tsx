@@ -1,4 +1,5 @@
 import React from 'react';
+import {memo} from 'react';
 import "./color.css";
 
 const ColorSwatch = ({ setCurrentNodeBg }:any) => {
@@ -76,4 +77,4 @@ const ColorSwatch = ({ setCurrentNodeBg }:any) => {
     );
 }
 
-export default ColorSwatch;
+export default memo(ColorSwatch);

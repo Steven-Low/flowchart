@@ -152,6 +152,7 @@
     opacity: 0;
     transition: opacity 0.2s ease;
     transition-delay: 0.5s;
+    pointer-events: none;
   }
   
   .tooltip::after {
@@ -173,13 +174,13 @@
   }
   
   .open {
-    left: 0px;
-  }
-  .save {
     left: 100px;
   }
-  .restore {
+  .save {
     left: 200px;
+  }
+  .restore {
+    left: 300px;
   }
   
   
