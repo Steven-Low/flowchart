@@ -2,8 +2,8 @@
 A simple flowchart drawing diagram. 
 
 # Example
-Live demo on https://flowchartdiagram.vercel.app
-For professional use cases, please go to https://draw.io
+- Live demo on https://flowchartdiagram.vercel.app
+- For professional use cases, please go to https://draw.io
 
 # Create new react app with typescript template
 ```
