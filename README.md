@@ -6,17 +6,23 @@ Live demo on https://flowchartdiagram.vercel.app
 For professional use cases, please go to https://draw.io
 
 # Create new react app with typescript template
+```
 npx create-react-app my-app --template typescript
+```
 
 # Add typescript compatibility to existing react app
+```
 npm install --save typescript @types/node @types/react @types/react-dom @types/jest
+```
 
 # Install package dependencies
+```
 npm install reactflow 
 npm install typescript@4.9.5
 npm install --legacy-peer-deps
 npm install html-to-image
 npm install react-router-dom@6
+```
 
 # How to use?
 
